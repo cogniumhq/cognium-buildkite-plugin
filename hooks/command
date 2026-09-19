@@ -15,7 +15,15 @@ echo "--- :shield: ${PLUGIN_NAME}"
 
 echo "Installing cognium-dev@${PACKAGE_VERSION}..."
 
-npm install --global "cognium-dev@${PACKAGE_VERSION}"
+INSTALL_DIR="$(mktemp -d)"
+trap 'rm -rf "$INSTALL_DIR"' EXIT
+
+npm install \
+  --prefix "$INSTALL_DIR" \
+  --no-save \
+  "cognium-dev@${PACKAGE_VERSION}"
+
+COGNIUM_BIN="${INSTALL_DIR}/node_modules/.bin/cognium-dev"
 
 echo "--- :mag: Running Cognium SAST scan"
 
@@ -54,6 +62,6 @@ if [[ -n "$OUTPUT" ]]; then
   echo "Output: ${OUTPUT}"
 fi
 
-cognium-dev "${ARGS[@]}"
+"$COGNIUM_BIN" "${ARGS[@]}"
 
 echo "--- :white_check_mark: Cognium SAST scan completed"

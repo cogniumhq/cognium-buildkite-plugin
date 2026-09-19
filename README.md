@@ -6,7 +6,7 @@ Run Cognium static application security testing scans in Buildkite.
 
 ```yaml
 steps:
-  - command: echo "Run Cognium"
+  - label: ":shield: Cognium SAST"
     plugins:
       - cogniumhq/cognium#v1.0.0:
           path: .
@@ -31,7 +31,7 @@ steps:
 
 ## How It Works
 
-The plugin installs `cognium-dev` using npm and runs a Cognium SAST scan against the configured path.
+The plugin installs the specified version of `cognium-dev` into a temporary directory using npm and runs a Cognium SAST scan against the configured path.
 
 ```text
 Buildkite
@@ -49,9 +49,11 @@ cognium-dev scan
 Security findings
 ```
 
+If Cognium detects security findings, the plugin propagates the scan's non-zero exit code so the Buildkite step can fail accordingly.
+
 ## Development
 
-Run the plugin linter:
+Run the Buildkite plugin linter:
 
 ```shell
 docker run -it --rm -v "$PWD:/plugin:ro" buildkite/plugin-linter --id cogniumhq/cognium --path /plugin
@@ -63,6 +65,3 @@ Run the plugin tests:
 docker run -it --rm -v "$PWD:/plugin:ro" buildkite/plugin-tester
 ```
 
-## License
-
-Apache-2.0

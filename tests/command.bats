@@ -4,19 +4,32 @@ setup() {
   export TEST_BIN="$BATS_TEST_TMPDIR/bin"
   mkdir -p "$TEST_BIN"
 
-  # Fake npm so the test never installs anything.
+  # Fake npm.
+  # The plugin calls:
+  #
+  # npm install --prefix "$INSTALL_DIR" --no-save "cognium-dev@..."
+  #
+  # Therefore $3 is the temporary installation directory.
   cat > "$TEST_BIN/npm" <<'EOF'
 #!/bin/bash
-exit 0
-EOF
-  chmod +x "$TEST_BIN/npm"
 
-  # Fake cognium-dev that records exactly what arguments it receives.
-  cat > "$TEST_BIN/cognium-dev" <<'EOF'
+set -euo pipefail
+
+PREFIX="$3"
+
+mkdir -p "$PREFIX/node_modules/.bin"
+
+cat > "$PREFIX/node_modules/.bin/cognium-dev" <<'COGNIUM'
 #!/bin/bash
+
 printf '%s\n' "$@" > "$BATS_TEST_TMPDIR/cognium-args"
+exit 0
+COGNIUM
+
+chmod +x "$PREFIX/node_modules/.bin/cognium-dev"
 EOF
-  chmod +x "$TEST_BIN/cognium-dev"
+
+  chmod +x "$TEST_BIN/npm"
 
   export PATH="$TEST_BIN:$PATH"
 }
