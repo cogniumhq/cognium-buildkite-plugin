@@ -1,0 +1,36 @@
+name: Plugin Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Buildkite Plugin Linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Buildkite plugin linter
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/plugin:ro" \
+            buildkite/plugin-linter \
+            --id cogniumhq/cognium \
+            --path /plugin
+
+  test:
+    name: Buildkite Plugin Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Buildkite plugin tester
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/plugin:ro" \
+            buildkite/plugin-tester
