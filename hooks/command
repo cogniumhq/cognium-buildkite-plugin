@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -euo pipefail
+
+PLUGIN_NAME="Cognium SAST"
+
+PATH_TO_SCAN="${BUILDKITE_PLUGIN_COGNIUM_PATH:-.}"
+PACKAGE_VERSION="${BUILDKITE_PLUGIN_COGNIUM_PACKAGE_VERSION:-4.9.16}"
+FORMAT="${BUILDKITE_PLUGIN_COGNIUM_FORMAT:-text}"
+OUTPUT="${BUILDKITE_PLUGIN_COGNIUM_OUTPUT:-}"
+SEVERITY="${BUILDKITE_PLUGIN_COGNIUM_SEVERITY:-}"
+CATEGORY="${BUILDKITE_PLUGIN_COGNIUM_CATEGORY:-}"
+
+echo "--- :shield: ${PLUGIN_NAME}"
+
+echo "Installing cognium-dev@${PACKAGE_VERSION}..."
+
+npm install --global "cognium-dev@${PACKAGE_VERSION}"
+
+echo "--- :mag: Running Cognium SAST scan"
+
+ARGS=(
+  "scan"
+  "$PATH_TO_SCAN"
+  "--format"
+  "$FORMAT"
+)
+
+if [[ -n "$OUTPUT" ]]; then
+  ARGS+=(
+    "--output"
+    "$OUTPUT"
+  )
+fi
+
+if [[ -n "$SEVERITY" ]]; then
+  ARGS+=(
+    "--severity"
+    "$SEVERITY"
+  )
+fi
+
+if [[ -n "$CATEGORY" ]]; then
+  ARGS+=(
+    "--category"
+    "$CATEGORY"
+  )
+fi
+
+echo "Path: ${PATH_TO_SCAN}"
+echo "Format: ${FORMAT}"
+
+if [[ -n "$OUTPUT" ]]; then
+  echo "Output: ${OUTPUT}"
+fi
+
+cognium-dev "${ARGS[@]}"
+
+echo "--- :white_check_mark: Cognium SAST scan completed"

@@ -1,0 +1,36 @@
+name: Cognium SAST
+description: Run Cognium static application security testing scans in Buildkite
+author: https://github.com/cogniumhq
+
+requirements:
+  - node
+  - npm
+
+configuration:
+  properties:
+    path:
+      type: string
+      default: "."
+
+    package-version:
+      type: string
+      default: "4.9.16"
+
+    format:
+      type: string
+      enum:
+        - text
+        - json
+        - sarif
+      default: "text"
+
+    output:
+      type: string
+
+    severity:
+      type: string
+
+    category:
+      type: string
+
+  additionalProperties: false
