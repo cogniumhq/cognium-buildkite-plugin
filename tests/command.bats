@@ -4,6 +4,43 @@ setup() {
   export TEST_BIN="$BATS_TEST_TMPDIR/bin"
   mkdir -p "$TEST_BIN"
 
+  # Fake node.
+  #
+  # The plugin checks:
+  #
+  # node --version
+  # node -e '...version check...'
+  #
+  # By default, simulate a supported Node.js version.
+  cat > "$TEST_BIN/node" <<'EOF'
+#!/bin/bash
+
+set -euo pipefail
+
+NODE_VERSION="${FAKE_NODE_VERSION:-v20.19.0}"
+
+if [[ "$1" == "--version" ]]; then
+  echo "$NODE_VERSION"
+  exit 0
+fi
+
+if [[ "$1" == "-e" ]]; then
+  if [[ "$NODE_VERSION" == v18.* ]]; then
+    exit 1
+  fi
+
+  if [[ "$NODE_VERSION" == v20.18.* ]]; then
+    exit 1
+  fi
+
+  exit 0
+fi
+
+exit 0
+EOF
+
+  chmod +x "$TEST_BIN/node"
+
   # Fake npm.
   #
   # The plugin calls:
@@ -211,4 +248,14 @@ EOF
   INSTALL_DIR="$(cat "$BATS_TEST_TMPDIR/install-dir")"
 
   [ ! -d "$INSTALL_DIR" ]
+}
+
+@test "plugin rejects unsupported Node.js version" {
+  export FAKE_NODE_VERSION="v18.20.8"
+
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Node.js >= 20.19.0 is required"* ]]
+  [[ "$output" == *"v18.20.8"* ]]
 }

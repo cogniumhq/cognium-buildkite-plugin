@@ -2,6 +2,23 @@
 
 set -euo pipefail
 
+if ! command -v node >/dev/null 2>&1; then
+  echo "ERROR: Node.js is required but was not found in PATH." >&2
+  exit 1
+fi
+
+NODE_VERSION="$(node --version)"
+
+if ! node -e '
+  const [major, minor] = process.versions.node.split(".").map(Number);
+  if (major < 20 || (major === 20 && minor < 19)) {
+    process.exit(1);
+  }
+'; then
+  echo "ERROR: Node.js >= 20.19.0 is required. Found ${NODE_VERSION}." >&2
+  exit 1
+fi
+
 PLUGIN_NAME="Cognium SAST"
 
 PATH_TO_SCAN="${BUILDKITE_PLUGIN_COGNIUM_PATH:-.}"
