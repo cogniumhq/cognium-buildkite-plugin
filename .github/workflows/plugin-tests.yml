@@ -43,3 +43,34 @@ jobs:
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/plugin:ro" \
             buildkite/plugin-tester:v4.3.0
+  integration:
+    name: Real Cognium Integration Test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Run real Cognium scan
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/plugin" \
+            -w /plugin \
+            node:20.19-bookworm \
+            bash -c '
+              BUILDKITE_PLUGIN_COGNIUM_PATH=tests/integration bash hooks/command
+              EXIT_CODE=$?
+
+              echo "Cognium exit code:"
+              echo "$EXIT_CODE"
+
+              if [ "$EXIT_CODE" -ne 1 ]; then
+                echo "Expected Cognium to report a security finding and exit with code 1."
+                exit 1
+              fi
+
+              echo "Integration test passed."
+            '

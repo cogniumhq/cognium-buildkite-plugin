@@ -5,24 +5,60 @@ setup() {
   mkdir -p "$TEST_BIN"
 
   # Fake npm.
+  #
   # The plugin calls:
   #
-  # npm install --prefix "$INSTALL_DIR" --no-save "cognium-dev@..."
+  # npm install \
+  #   --prefix "$INSTALL_DIR" \
+  #   --no-save \
+  #   "cognium-dev@${PACKAGE_VERSION}"
   #
-  # Therefore $3 is the temporary installation directory.
+  # The fake npm records its arguments and creates a fake cognium-dev binary.
   cat > "$TEST_BIN/npm" <<'EOF'
 #!/bin/bash
 
 set -euo pipefail
 
-PREFIX="$3"
+printf '%s\n' "$@" > "$BATS_TEST_TMPDIR/npm-args"
+
+PREFIX=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --prefix)
+      PREFIX="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+if [[ "${FAKE_NPM_FAIL:-0}" == "1" ]]; then
+  exit 42
+fi
+
+if [[ -z "$PREFIX" ]]; then
+  echo "Missing --prefix" >&2
+  exit 43
+fi
+
+printf '%s' "$PREFIX" > "$BATS_TEST_TMPDIR/install-dir"
 
 mkdir -p "$PREFIX/node_modules/.bin"
 
 cat > "$PREFIX/node_modules/.bin/cognium-dev" <<'COGNIUM'
 #!/bin/bash
 
+set -euo pipefail
+
 printf '%s\n' "$@" > "$BATS_TEST_TMPDIR/cognium-args"
+
+if [[ "${FAKE_COGNIUM_FAIL:-0}" == "1" ]]; then
+  exit "${FAKE_COGNIUM_EXIT:-7}"
+fi
+
 exit 0
 COGNIUM
 
@@ -135,4 +171,44 @@ EOF
   [ "$status" -eq 0 ]
 
   [ "$output" = $'scan\n./src\n--format\nsarif\n--output\ncognium-results.sarif\n--severity\ncritical,high\n--category\nsecurity' ]
+}
+
+@test "plugin passes package-version to npm" {
+  export BUILDKITE_PLUGIN_COGNIUM_PACKAGE_VERSION="4.9.15"
+
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 0 ]
+
+  run cat "$BATS_TEST_TMPDIR/npm-args"
+
+  [ "$status" -eq 0 ]
+  [ "$output" = $'install\n--prefix\n'$(cat "$BATS_TEST_TMPDIR/install-dir")$'\n--no-save\ncognium-dev@4.9.15' ]
+}
+
+@test "plugin propagates npm installation failure" {
+  export FAKE_NPM_FAIL=1
+
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 42 ]
+}
+
+@test "plugin propagates scanner failure" {
+  export FAKE_COGNIUM_FAIL=1
+  export FAKE_COGNIUM_EXIT=7
+
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 7 ]
+}
+
+@test "plugin removes temporary installation directory" {
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 0 ]
+
+  INSTALL_DIR="$(cat "$BATS_TEST_TMPDIR/install-dir")"
+
+  [ ! -d "$INSTALL_DIR" ]
 }
