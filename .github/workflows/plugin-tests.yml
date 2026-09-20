@@ -4,33 +4,42 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Buildkite Plugin Linter
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Run Buildkite plugin linter
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/plugin:ro" \
-            buildkite/plugin-linter \
+            buildkite/plugin-linter:v2.1.0 \
             --id cogniumhq/cognium \
             --path /plugin
 
   test:
     name: Buildkite Plugin Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Run Buildkite plugin tester
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/plugin:ro" \
-            buildkite/plugin-tester
+            buildkite/plugin-tester:v4.3.0
