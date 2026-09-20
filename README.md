@@ -8,7 +8,7 @@ Run Cognium static application security testing scans in Buildkite.
 steps:
   - label: ":shield: Cognium SAST"
     plugins:
-      - cogniumhq/cognium#v1.0.1:
+      - cogniumhq/cognium#v1.0.0:
           path: .
 ```
 
