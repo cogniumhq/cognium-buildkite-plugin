@@ -13,6 +13,8 @@ steps:
           path: .
 ```
 
+The plugin provides the Buildkite `command` hook, so you do not need to add a separate `command:` step for the Cognium scan.
+
 ## Configuration
 
 | Option | Type | Default | Description |
@@ -23,6 +25,22 @@ steps:
 | `output` | string | — | Output file |
 | `severity` | string | — | Severity filter |
 | `category` | string | — | Category filter |
+
+### SARIF / JSON artifacts
+
+To make a SARIF or JSON report available as a Buildkite artifact, configure the plugin's `output` and the step's `artifact_paths`:
+
+```yaml
+steps:
+  - label: ":shield: Cognium SAST"
+    artifact_paths:
+      - "cognium-results.sarif"
+    plugins:
+      - cogniumhq/cognium#v1.0.1:
+          path: .
+          format: sarif
+          output: cognium-results.sarif
+```
 
 ## Requirements
 
@@ -66,3 +84,6 @@ Run the plugin tests:
 docker run -it --rm -v "$PWD:/plugin:ro" buildkite/plugin-tester
 ```
 
+## LICENSE
+
+MIT
