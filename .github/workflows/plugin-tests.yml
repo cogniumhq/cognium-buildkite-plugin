@@ -54,23 +54,52 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run real Cognium scan
+      - name: Verify warn-only mode
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/plugin" \
             -w /plugin \
             node:20.19-bookworm \
             bash -c '
-              BUILDKITE_PLUGIN_COGNIUM_PATH=tests/integration bash hooks/command
+              set +e
+
+              BUILDKITE_PLUGIN_COGNIUM_PATH=tests/integration \
+              BUILDKITE_PLUGIN_COGNIUM_FAIL_ON_FINDINGS=false \
+              bash hooks/command
+
               EXIT_CODE=$?
 
-              echo "Cognium exit code:"
-              echo "$EXIT_CODE"
+              echo "Warn-only exit code: $EXIT_CODE"
 
-              if [ "$EXIT_CODE" -ne 1 ]; then
-                echo "Expected Cognium to report a security finding and exit with code 1."
+              if [ "$EXIT_CODE" -ne 0 ]; then
+                echo "Expected warn-only mode to exit with code 0."
                 exit 1
               fi
 
-              echo "Integration test passed."
+              echo "Warn-only integration test passed."
+            '
+
+      - name: Verify fail-on-findings mode
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/plugin" \
+            -w /plugin \
+            node:20.19-bookworm \
+            bash -c '
+              set +e
+
+              BUILDKITE_PLUGIN_COGNIUM_PATH=tests/integration \
+              BUILDKITE_PLUGIN_COGNIUM_FAIL_ON_FINDINGS=true \
+              bash hooks/command
+
+              EXIT_CODE=$?
+
+              echo "Fail-on-findings exit code: $EXIT_CODE"
+
+              if [ "$EXIT_CODE" -ne 1 ]; then
+                echo "Expected fail-on-findings mode to exit with code 1."
+                exit 1
+              fi
+
+              echo "Fail-on-findings integration test passed."
             '
