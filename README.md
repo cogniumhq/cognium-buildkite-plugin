@@ -14,7 +14,7 @@ steps:
 
     plugins:
 
-      - cogniumhq/cognium#v1.0.1:
+      - cogniumhq/cognium#v1.1.0:
 
           path: .
 
@@ -56,7 +56,7 @@ steps:
 
     plugins:
 
-      - cogniumhq/cognium#v1.0.1:
+      - cogniumhq/cognium#v1.1.0:
 
           path: .
 
@@ -76,7 +76,7 @@ steps:
 
     plugins:
 
-      - cogniumhq/cognium#v1.0.1:
+      - cogniumhq/cognium#v1.1.0:
 
           path: .
 
@@ -102,7 +102,7 @@ steps:
 
     plugins:
 
-      - cogniumhq/cognium#v1.0.1:
+      - cogniumhq/cognium#v1.1.0:
 
           path: .
 
