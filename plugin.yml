@@ -36,4 +36,8 @@ configuration:
       type: string
       pattern: '^(security|reliability|performance|maintainability|architecture)(,(security|reliability|performance|maintainability|architecture))*$'
 
+    fail-on-findings:
+      type: boolean
+      default: false
+
   additionalProperties: false

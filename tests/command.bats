@@ -92,11 +92,24 @@ set -euo pipefail
 
 printf '%s\n' "$@" > "$BATS_TEST_TMPDIR/cognium-args"
 
-if [[ "${FAKE_COGNIUM_FAIL:-0}" == "1" ]]; then
-  exit "${FAKE_COGNIUM_EXIT:-7}"
-fi
+case "${FAKE_COGNIUM_RESULT:-success}" in
+  success)
+    exit 0
+    ;;
 
-exit 0
+  findings)
+    exit 1
+    ;;
+
+  error)
+    exit "${FAKE_COGNIUM_EXIT:-7}"
+    ;;
+
+  *)
+    echo "Unknown FAKE_COGNIUM_RESULT" >&2
+    exit 99
+    ;;
+esac
 COGNIUM
 
 chmod +x "$PREFIX/node_modules/.bin/cognium-dev"
@@ -231,9 +244,37 @@ EOF
   [ "$status" -eq 42 ]
 }
 
-@test "plugin propagates scanner failure" {
-  export FAKE_COGNIUM_FAIL=1
+@test "plugin treats findings as non-fatal by default" {
+  export FAKE_COGNIUM_RESULT=findings
+
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"fail-on-findings is false"* ]]
+}
+
+@test "plugin fails on findings when fail-on-findings is true" {
+  export FAKE_COGNIUM_RESULT=findings
+  export BUILDKITE_PLUGIN_COGNIUM_FAIL_ON_FINDINGS=true
+
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 1 ]
+}
+
+@test "plugin propagates scanner failure regardless of fail-on-findings" {
+  export FAKE_COGNIUM_RESULT=error
   export FAKE_COGNIUM_EXIT=7
+
+  run bash "$PWD/hooks/command"
+
+  [ "$status" -eq 7 ]
+}
+
+@test "plugin propagates scanner failure when fail-on-findings is true" {
+  export FAKE_COGNIUM_RESULT=error
+  export FAKE_COGNIUM_EXIT=7
+  export BUILDKITE_PLUGIN_COGNIUM_FAIL_ON_FINDINGS=true
 
   run bash "$PWD/hooks/command"
 

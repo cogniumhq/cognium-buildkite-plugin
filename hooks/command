@@ -27,6 +27,7 @@ FORMAT="${BUILDKITE_PLUGIN_COGNIUM_FORMAT:-text}"
 OUTPUT="${BUILDKITE_PLUGIN_COGNIUM_OUTPUT:-}"
 SEVERITY="${BUILDKITE_PLUGIN_COGNIUM_SEVERITY:-}"
 CATEGORY="${BUILDKITE_PLUGIN_COGNIUM_CATEGORY:-}"
+FAIL_ON_FINDINGS="${BUILDKITE_PLUGIN_COGNIUM_FAIL_ON_FINDINGS:-false}"
 
 echo "--- :shield: ${PLUGIN_NAME}"
 
@@ -79,6 +80,32 @@ if [[ -n "$OUTPUT" ]]; then
   echo "Output: ${OUTPUT}"
 fi
 
-"$COGNIUM_BIN" "${ARGS[@]}"
+if [[ "$FAIL_ON_FINDINGS" == "true" ]]; then
+  echo "Fail on findings: true"
+else
+  echo "Fail on findings: false"
+fi
 
-echo "--- :white_check_mark: Cognium SAST scan completed"
+SCAN_EXIT_CODE=0
+
+"$COGNIUM_BIN" "${ARGS[@]}" || SCAN_EXIT_CODE=$?
+
+echo "--- :mag: Cognium SAST scan exited with code ${SCAN_EXIT_CODE}"
+
+if [[ "$SCAN_EXIT_CODE" -eq 0 ]]; then
+  echo "--- :white_check_mark: Cognium SAST scan completed"
+  exit 0
+fi
+
+if [[ "$SCAN_EXIT_CODE" -eq 1 ]]; then
+  if [[ "$FAIL_ON_FINDINGS" == "true" ]]; then
+    echo "--- :x: Cognium SAST findings detected; failing because fail-on-findings is true"
+    exit 1
+  fi
+
+  echo "--- :warning: Cognium SAST findings detected; continuing because fail-on-findings is false"
+  exit 0
+fi
+
+echo "--- :x: Cognium SAST scanner failed with exit code ${SCAN_EXIT_CODE}"
+exit "$SCAN_EXIT_CODE"
