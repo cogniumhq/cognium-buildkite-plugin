@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "tierA": [
+    "plugin.yml",
+    "hooks/",
+    "tests/integration/"
+  ]
+}
